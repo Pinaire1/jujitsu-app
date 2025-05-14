@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 import { Button } from "../components/ui/button";
 import BeltDistribution from "../components/BeltDistribution";
 import CurriculumByBelt from "../components/CurriculumByBelt";
+import ActiveBeltCounter from "../components/ActiveBeltCounter";
 import { BELT_COLORS } from "../lib/colors";
 
 export default function Home() {
@@ -145,6 +146,14 @@ export default function Home() {
                   ))}
                 </div>
               </div>
+
+              <div className="bg-white rounded-lg shadow-md p-4">
+                <h3 className="text-lg font-semibold mb-3">Active Users</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Currently logged-in users by belt level:
+                </p>
+                <ActiveBeltCounter refreshTrigger={refreshTrigger} />
+              </div>
             </div>
           </div>
         ) : (
@@ -173,6 +182,11 @@ export default function Home() {
                     <p className="text-sm font-medium">{colors.name}</p>
                   </div>
                 ))}
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <h3 className="font-medium mb-3">Active Members Now</h3>
+                <ActiveBeltCounter refreshTrigger={refreshTrigger} />
               </div>
             </div>
           </div>
