@@ -32,6 +32,12 @@ export default function Navbar() {
                 >
                   Profile
                 </Link>
+                <Link
+                  to="/class-planner"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Class Planner
+                </Link>
                 <Button variant="outline" onClick={handleSignOut}>
                   Sign Out
                 </Button>

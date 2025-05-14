@@ -23,16 +23,10 @@ export default function ActiveBeltCounter({
       try {
         setLoading(true);
 
-        // Get active sessions from the last 24 hours
-        const twentyFourHoursAgo = new Date();
-        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-
-        // This would be a more complex query in a real app to check actual login sessions
-        // For this demo, we're just going to get all users and simulate recent activity
+        // Use the todays_signed_in_belts table for real data
         const { data, error } = await supabase
-          .from("students")
-          .select("belt_level")
-          .not("belt_level", "is", null);
+          .from("todays_signed_in_belts")
+          .select("*");
 
         if (error) throw error;
 
@@ -44,23 +38,15 @@ export default function ActiveBeltCounter({
           })
         );
 
-        // Simulate active users by counting some percentage of each belt
-        if (data) {
-          const beltCounts = data.reduce(
-            (counts: Record<string, number>, item) => {
-              counts[item.belt_level] = (counts[item.belt_level] || 0) + 1;
-              return counts;
-            },
-            {}
-          );
-
-          allBeltCounts.forEach((beltCount) => {
-            const totalForBelt = beltCounts[beltCount.belt_level] || 0;
-            // Simulate that some percentage are "active" (would be actual login data in real app)
-            const activePercentage = Math.random() * 0.8; // Random percentage up to 80%
-            beltCount.active_count = Math.round(
-              totalForBelt * activePercentage
+        // Process the actual data from todays_signed_in_belts
+        if (data && data.length > 0) {
+          data.forEach((item) => {
+            const beltIndex = allBeltCounts.findIndex(
+              (b) => b.belt_level === item.belt_level
             );
+            if (beltIndex !== -1) {
+              allBeltCounts[beltIndex].active_count = item.count || 1;
+            }
           });
         }
 
