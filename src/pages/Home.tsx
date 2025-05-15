@@ -5,6 +5,7 @@ import { Button } from "../components/ui/button";
 import BeltDistribution from "../components/BeltDistribution";
 import CurriculumByBelt from "../components/CurriculumByBelt";
 import ActiveBeltCounter from "../components/ActiveBeltCounter";
+import TechniqueCard from "../components/TechniqueCard";
 import { BELT_COLORS } from "../lib/colors";
 
 export default function Home() {
@@ -105,6 +106,16 @@ export default function Home() {
                 </div>
               </div>
 
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-4">
+                  Technique Showcase
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Auto-rotating jiu-jitsu techniques to study and practice:
+                </p>
+                <TechniqueCard />
+              </div>
+
               <CurriculumByBelt />
             </div>
 
@@ -188,6 +199,17 @@ export default function Home() {
                 <h3 className="font-medium mb-3">Active Members Now</h3>
                 <ActiveBeltCounter refreshTrigger={refreshTrigger} />
               </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold mb-4">
+                Jiu-jitsu Techniques
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Explore these techniques and combinations. Sign up to track your
+                progress!
+              </p>
+              <TechniqueCard />
             </div>
           </div>
         )}
