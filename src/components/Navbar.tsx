@@ -38,6 +38,12 @@ export default function Navbar() {
                 >
                   Class Planner
                 </Link>
+                <Link
+                  to="/training-videos"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Training Videos
+                </Link>
                 <Button variant="outline" onClick={handleSignOut}>
                   Sign Out
                 </Button>

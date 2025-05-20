@@ -64,4 +64,68 @@ ORDER BY CASE
   WHEN belt_level = 'BROWN' THEN 4
   WHEN belt_level = 'BLACK' THEN 5
   ELSE 6
-END; 
+END;
+
+-- Create training_videos table
+CREATE TABLE IF NOT EXISTS training_videos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  analysis_prompt TEXT NOT NULL,
+  video_url TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create video_analysis table for storing AI analysis results
+CREATE TABLE IF NOT EXISTS video_analysis (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  video_id UUID NOT NULL REFERENCES training_videos(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  timestamp TEXT NOT NULL,
+  tip TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create index for faster video queries
+CREATE INDEX IF NOT EXISTS idx_training_videos_user_id ON training_videos(user_id);
+CREATE INDEX IF NOT EXISTS idx_video_analysis_video_id ON video_analysis(video_id);
+CREATE INDEX IF NOT EXISTS idx_video_analysis_user_id ON video_analysis(user_id);
+
+-- Create todays_signed_in_belts table for tracking active users by belt level
+CREATE TABLE IF NOT EXISTS todays_signed_in_belts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  belt_level TEXT NOT NULL,
+  count INTEGER DEFAULT 1,
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(belt_level, date)
+);
+
+-- Create index for faster queries
+CREATE INDEX IF NOT EXISTS idx_todays_signed_in_belts_date ON todays_signed_in_belts(date);
+CREATE INDEX IF NOT EXISTS idx_todays_signed_in_belts_belt_level ON todays_signed_in_belts(belt_level);
+
+-- Create a function to clean up old records
+CREATE OR REPLACE FUNCTION cleanup_old_signed_in_belts()
+RETURNS void AS $$
+BEGIN
+  DELETE FROM todays_signed_in_belts WHERE date < CURRENT_DATE;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a trigger to run cleanup at midnight
+CREATE OR REPLACE FUNCTION trigger_cleanup_old_signed_in_belts()
+RETURNS trigger AS $$
+BEGIN
+  PERFORM cleanup_old_signed_in_belts();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER cleanup_signed_in_belts_trigger
+  AFTER INSERT ON todays_signed_in_belts
+  FOR EACH STATEMENT
+  EXECUTE FUNCTION trigger_cleanup_old_signed_in_belts(); 
