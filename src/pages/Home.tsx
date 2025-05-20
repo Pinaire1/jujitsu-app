@@ -6,6 +6,7 @@ import BeltDistribution from "../components/BeltDistribution";
 import CurriculumByBelt from "../components/CurriculumByBelt";
 import ActiveBeltCounter from "../components/ActiveBeltCounter";
 import TechniqueCard from "../components/TechniqueCard";
+import ClassSchedule from "../components/ClassSchedule";
 import { BELT_COLORS } from "../lib/colors";
 import BeltSummary from "../components/BeltSummary";
 
@@ -76,34 +77,47 @@ export default function Home() {
                 </div>
 
                 <div className="my-6">
-                  <h3 className="text-lg font-semibold mb-4">
-                    Your Training Sessions
-                  </h3>
-                  {loading ? (
-                    <p>Loading sessions...</p>
-                  ) : classSessions.length > 0 ? (
-                    <ul className="space-y-2">
-                      {classSessions.map((session) => (
-                        <li
-                          key={session.id}
-                          className="p-3 bg-gray-50 rounded border border-gray-200"
-                        >
-                          <p className="font-medium">
-                            Date:{" "}
-                            {new Date(session.class_date).toLocaleDateString()}
-                          </p>
-                          <p className="text-gray-600">
-                            Time:{" "}
-                            {new Date(
-                              session.signed_in_at
-                            ).toLocaleTimeString()}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>No training sessions yet.</p>
-                  )}
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">
+                      Class Schedule & Check-in
+                    </h3>
+                  </div>
+
+                  <ClassSchedule />
+
+                  {/* Recent Check-ins */}
+                  <div className="mt-8">
+                    <h4 className="text-md font-medium mb-3">
+                      Your Recent Check-ins
+                    </h4>
+                    {loading ? (
+                      <p>Loading sessions...</p>
+                    ) : classSessions.length > 0 ? (
+                      <ul className="space-y-2">
+                        {classSessions.map((session) => (
+                          <li
+                            key={session.id}
+                            className="p-3 bg-gray-50 rounded border border-gray-200"
+                          >
+                            <p className="font-medium">
+                              Date:{" "}
+                              {new Date(
+                                session.class_date
+                              ).toLocaleDateString()}
+                            </p>
+                            <p className="text-gray-600">
+                              Time:{" "}
+                              {new Date(
+                                session.signed_in_at
+                              ).toLocaleTimeString()}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No recent check-ins.</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
