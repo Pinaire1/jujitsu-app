@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { Button } from "@/components/ui/button";
 
 // Sample jiu-jitsu techniques data
 const techniques = [
@@ -288,7 +290,6 @@ export const TechniqueCard = () => {
               <div className="text-gray-400 text-xs">...</div>
             )}
             {allTechniques.map((_, index) => {
-              // Show only the current index and 4 dots around it
               if (
                 index === currentIndex ||
                 index === currentIndex - 1 ||
