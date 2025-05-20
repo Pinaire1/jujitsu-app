@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import ClassPlanner from "./pages/ClassPlanner";
 import VerifyEmail from "./pages/VerifyEmail";
+import TrainingVideos from "./pages/TrainingVideos";
 import Navbar from "./components/Navbar";
 import "./App.css";
 
@@ -54,6 +55,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ClassPlanner />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/training-videos"
+                element={
+                  <ProtectedRoute>
+                    <TrainingVideos />
                   </ProtectedRoute>
                 }
               />

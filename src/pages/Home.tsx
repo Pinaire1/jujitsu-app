@@ -7,6 +7,7 @@ import CurriculumByBelt from "../components/CurriculumByBelt";
 import ActiveBeltCounter from "../components/ActiveBeltCounter";
 import TechniqueCard from "../components/TechniqueCard";
 import { BELT_COLORS } from "../lib/colors";
+import BeltSummary from "../components/BeltSummary";
 
 export default function Home() {
   const { user, signOut } = useAuth();

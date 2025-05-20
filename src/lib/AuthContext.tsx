@@ -53,6 +53,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
     if (error) throw error;
+
+    // After successful sign in, update todays_signed_in_belts
+    const { data: userData, error: userError } = await supabase
+      .from("students")
+      .select("belt_level")
+      .eq("id", (await supabase.auth.getUser()).data.user?.id)
+      .single();
+
+    if (userError) {
+      console.error("Error fetching user belt level:", userError);
+      return;
+    }
+
+    if (userData?.belt_level) {
+      const today = new Date().toISOString().split("T")[0];
+
+      // First, try to update existing record
+      const { error: updateError } = await supabase
+        .from("todays_signed_in_belts")
+        .upsert(
+          {
+            belt_level: userData.belt_level,
+            count: 1,
+            date: today,
+          },
+          {
+            onConflict: "belt_level,date",
+          }
+        );
+
+      if (updateError) {
+        console.error("Error updating todays_signed_in_belts:", updateError);
+      }
+    }
   };
 
   const signUp = async (email: string, password: string) => {

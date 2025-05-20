@@ -51,25 +51,41 @@ export default function Profile() {
 
   const updateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!user) return;
-
     try {
       setLoading(true);
       setError(null);
-      setUpdateSuccess(false);
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from("students")
         .update({ name, belt_level: beltLevel })
-        .eq("id", user.id);
+        .eq("id", user?.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Update todays_signed_in_belts
+      const today = new Date().toISOString().split("T")[0];
+      const { error: beltError } = await supabase
+        .from("todays_signed_in_belts")
+        .upsert(
+          {
+            belt_level: beltLevel,
+            count: 1,
+            date: today,
+          },
+          {
+            onConflict: "belt_level,date",
+          }
+        );
+
+      if (beltError) {
+        console.error("Error updating todays_signed_in_belts:", beltError);
+      }
 
       setUpdateSuccess(true);
-    } catch (error) {
+      setTimeout(() => setUpdateSuccess(false), 3000);
+    } catch (error: any) {
       console.error("Error updating profile:", error);
-      setError("Failed to update profile");
+      setError(error.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }
