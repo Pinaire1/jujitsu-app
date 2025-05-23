@@ -10,7 +10,7 @@ type TrainingVideo = {
   technique: string;
   video_url: string;
   created_at: string;
-  description?: string;
+  ai_feedback?: string;
 };
 
 export default function TrainingVideos() {
@@ -18,6 +18,7 @@ export default function TrainingVideos() {
   const [videos, setVideos] = useState<TrainingVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -45,6 +46,21 @@ export default function TrainingVideos() {
       console.error("Error fetching videos:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVideoAnalysisComplete = async (feedback: string) => {
+    setAiFeedback(feedback);
+    // Update the video record with AI feedback
+    if (selectedVideo) {
+      const { error } = await supabase
+        .from("training_videos")
+        .update({ ai_feedback: feedback })
+        .eq("id", selectedVideo);
+
+      if (error) {
+        console.error("Error saving AI feedback:", error);
+      }
     }
   };
 
@@ -95,7 +111,10 @@ export default function TrainingVideos() {
                             ? "bg-blue-50 border border-blue-200"
                             : "bg-gray-50 border border-gray-200 hover:bg-gray-100"
                         }`}
-                        onClick={() => setSelectedVideo(video.id)}
+                        onClick={() => {
+                          setSelectedVideo(video.id);
+                          setAiFeedback(video.ai_feedback || null);
+                        }}
                       >
                         <h3 className="font-medium">{video.title}</h3>
                         <p className="text-sm text-gray-500">
@@ -136,18 +155,39 @@ export default function TrainingVideos() {
                         <h3 className="font-medium text-lg">
                           {videos.find((v) => v.id === selectedVideo)?.title}
                         </h3>
-                        <p className="text-gray-700 mt-2">
-                          {
-                            videos.find((v) => v.id === selectedVideo)
-                              ?.description
-                          }
-                        </p>
                       </>
                     )}
                   </div>
 
-                  {/* Video Analysis Section */}
-                  <VideoAnalysis user={user} videoId={selectedVideo} />
+                  {/* AI Feedback Section */}
+                  <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 className="text-xl font-semibold mb-4">
+                      AI Analysis & Feedback
+                    </h2>
+                    {aiFeedback ? (
+                      <div className="prose max-w-none">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h3 className="text-lg font-medium text-blue-800 mb-2">
+                            AI Feedback
+                          </h3>
+                          <p className="text-blue-700 whitespace-pre-wrap">
+                            {aiFeedback}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500 mb-4">
+                          No AI feedback available yet
+                        </p>
+                        <VideoAnalysis
+                          user={user}
+                          videoId={selectedVideo}
+                          onAnalysisComplete={handleVideoAnalysisComplete}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="bg-white rounded-lg shadow-md p-6 flex items-center justify-center h-64">

@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { Button } from "./ui/button";
 
 type VideoAnalysisProps = {
   user: any;
-  videoId?: string; // Optional - if we want to show analysis for a specific video
+  videoId?: string;
+  onAnalysisComplete?: (feedback: string) => void;
 };
 
 type AnalysisInsight = {
@@ -14,10 +16,15 @@ type AnalysisInsight = {
   created_at: string;
 };
 
-export default function VideoAnalysis({ user, videoId }: VideoAnalysisProps) {
+export default function VideoAnalysis({
+  user,
+  videoId,
+  onAnalysisComplete,
+}: VideoAnalysisProps) {
   const [insights, setInsights] = useState<AnalysisInsight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     fetchAnalysisData();
@@ -33,7 +40,6 @@ export default function VideoAnalysis({ user, videoId }: VideoAnalysisProps) {
         .select("*")
         .eq("user_id", user.id);
 
-      // If a specific video ID is provided, filter for that video
       if (videoId) {
         query = query.eq("video_id", videoId);
       }
@@ -51,6 +57,68 @@ export default function VideoAnalysis({ user, videoId }: VideoAnalysisProps) {
     }
   };
 
+  const handleAnalyzeVideo = async () => {
+    if (!videoId) return;
+
+    try {
+      setAnalyzing(true);
+      setError("");
+
+      // 1. Get video path from DB
+      const { data: videoData } = await supabase
+        .from("training_videos")
+        .select("video_url")
+        .eq("id", videoId)
+        .single();
+
+      const videoPath = videoData?.video_url.split("/videos/")[1]; // just the path
+
+      // 2. Generate signed URL
+      const { data: signedData } = await supabase.storage
+        .from("videos")
+        .createSignedUrl(videoPath, 3600);
+
+      const signedUrl = signedData?.signedUrl;
+
+      // 3. Send to backend
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const res = await fetch(`${apiUrl}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          video_url: signedUrl,
+          user_id: user.id,
+          video_id: videoId,
+        }),
+      });
+
+      const result = await res.json();
+
+      // 4. Save insights to Supabase
+      for (const insight of result.insights) {
+        await supabase.from("video_analysis").insert({
+          user_id: user.id,
+          video_id: videoId,
+          timestamp: insight.timestamp,
+          tip: insight.tip,
+        });
+      }
+
+      // 5. Update UI
+      const feedback = result.insights
+        .map((i: any) => `${i.timestamp}: ${i.tip}`)
+        .join("\n\n");
+
+      if (onAnalysisComplete) onAnalysisComplete(feedback);
+      await fetchAnalysisData();
+    } catch (err: any) {
+      console.error("Error analyzing video:", err);
+      setError(err.message || "Failed to analyze video");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   if (loading) {
     return <div className="p-4 text-center">Loading analysis data...</div>;
   }
@@ -61,19 +129,35 @@ export default function VideoAnalysis({ user, videoId }: VideoAnalysisProps) {
 
   if (insights.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Video Analysis</h2>
-        <p className="text-gray-600">
-          No analysis data available yet. Upload a video and request analysis to
-          see feedback on your techniques.
+      <div className="text-center">
+        <p className="text-gray-600 mb-4">
+          No analysis data available yet. Click the button below to analyze your
+          video.
         </p>
+        <Button
+          onClick={handleAnalyzeVideo}
+          disabled={analyzing}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          {analyzing ? "Analyzing..." : "Analyze Video"}
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <h2 className="text-xl font-semibold mb-4">Analysis for Your Roll</h2>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Analysis Results</h3>
+        <Button
+          onClick={handleAnalyzeVideo}
+          disabled={analyzing}
+          variant="outline"
+          size="sm"
+        >
+          {analyzing ? "Analyzing..." : "Re-analyze"}
+        </Button>
+      </div>
       <div className="space-y-4">
         {insights.map((insight, i) => (
           <div
