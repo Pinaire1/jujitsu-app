@@ -12,6 +12,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
 
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -26,10 +27,11 @@ export default function Profile() {
     const fetchProfile = async () => {
       try {
         setLoading(true);
+        setError(null);
 
         const { data, error } = await supabase
           .from("students")
-          .select("name, belt_level")
+          .select("name, belt_level, email")
           .eq("id", user.id)
           .single();
 
@@ -38,9 +40,11 @@ export default function Profile() {
         if (data) {
           setName(data.name || "");
           setBeltLevel((data.belt_level || "WHITE") as BeltLevel);
+          setEmail(data.email || user.email || "");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching profile:", error);
+        setError(error.message || "Failed to fetch profile");
       } finally {
         setLoading(false);
       }
@@ -49,18 +53,71 @@ export default function Profile() {
     fetchProfile();
   }, [user, navigate]);
 
+  const checkEmailExists = async (email: string) => {
+    const { data, error } = await supabase
+      .from("students")
+      .select("id")
+      .eq("email", email)
+      .neq("id", user?.id)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      throw error;
+    }
+
+    return !!data;
+  };
+
   const updateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setLoading(true);
       setError(null);
 
-      const { error: updateError } = await supabase
-        .from("students")
-        .update({ name, belt_level: beltLevel })
-        .eq("id", user?.id);
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new Error("Please enter a valid email address");
+      }
 
-      if (updateError) throw updateError;
+      // Check if email is already in use by another user
+      const emailExists = await checkEmailExists(email);
+      if (emailExists) {
+        throw new Error("This email address is already in use by another user");
+      }
+
+      // First, check if the student record exists
+      const { data: existingStudent, error: checkError } = await supabase
+        .from("students")
+        .select("id")
+        .eq("id", user?.id)
+        .single();
+
+      if (checkError && checkError.code !== "PGRST116") {
+        throw checkError;
+      }
+
+      if (!existingStudent) {
+        // If student doesn't exist, create a new record
+        const { error: insertError } = await supabase.from("students").insert([
+          {
+            id: user?.id,
+            name,
+            belt_level: beltLevel,
+            email: email,
+          },
+        ]);
+
+        if (insertError) throw insertError;
+      } else {
+        // If student exists, update the record
+        const { error: updateError } = await supabase
+          .from("students")
+          .update({ name, belt_level: beltLevel, email })
+          .eq("id", user?.id);
+
+        if (updateError) throw updateError;
+      }
 
       // Update todays_signed_in_belts
       const today = new Date().toISOString().split("T")[0];
@@ -115,11 +172,14 @@ export default function Profile() {
           <Input
             id="email"
             type="email"
-            value={user?.email || ""}
-            disabled
-            className="bg-gray-100"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email"
+            disabled={loading}
           />
-          <p className="text-sm text-gray-500 mt-1">Email cannot be changed</p>
+          <p className="text-sm text-gray-500 mt-1">
+            This email will be used for your account
+          </p>
         </div>
 
         <div>
