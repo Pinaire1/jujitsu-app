@@ -1,6 +1,13 @@
-# Jujitsu Training Tracker
+# Jujitsu Training Tracker (Frontend)
 
 A web application for tracking jujitsu training progress, managing belt levels, and generating curriculum based on student attendance.
+
+## Project Structure
+
+This repository contains the frontend of the Jujitsu Training Tracker application. The backend is maintained in a separate repository.
+
+- Frontend (this repo): React + TypeScript application
+- Backend: FastAPI application (separate repo)
 
 ## Features
 
@@ -17,6 +24,7 @@ A web application for tracking jujitsu training progress, managing belt levels, 
 - Vite for building
 - Tailwind CSS for styling
 - Supabase for authentication and database
+- FastAPI backend for video analysis (separate repo)
 
 ## Deployment Instructions for Vercel
 
@@ -60,10 +68,40 @@ Run the SQL script from `supabase_setup.sql` in your Supabase SQL Editor to crea
 
 ## Development
 
-1. Clone the repository
-2. Install dependencies: `npm install`
+1. Clone both repositories:
+
+   ```bash
+   # Frontend (this repo)
+   git clone <frontend-repo-url>
+
+   # Backend
+   git clone <backend-repo-url>
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   # Frontend
+   npm install
+
+   # Backend
+   cd ../fastapi-backend
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
 3. Create a `.env` file with your Supabase credentials
-4. Run the development server: `npm run dev`
+4. Run both servers:
+
+   ```bash
+   # Frontend
+   npm run dev
+
+   # Backend (in a separate terminal)
+   cd ../fastapi-backend
+   uvicorn api:app --reload
+   ```
 
 ## Testing Email Verification
 

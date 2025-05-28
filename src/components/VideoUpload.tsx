@@ -1,24 +1,121 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { Button } from "./ui/button";
 
 type VideoUploadProps = {
   user: any;
+  onAnalysisComplete?: (feedback: string) => void;
 };
 
-export default function VideoUpload({ user }: VideoUploadProps) {
+export default function VideoUpload({
+  user,
+  onAnalysisComplete,
+}: VideoUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [analysisPrompt, setAnalysisPrompt] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [analysisStatus, setAnalysisStatus] = useState<string>("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
+    }
+  };
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && droppedFile.type.startsWith("video/")) {
+      setFile(droppedFile);
+    } else {
+      setUploadError("Please drop a valid video file");
+    }
+  }, []);
+
+  const analyzeVideo = async (videoId: string, videoUrl: string) => {
+    try {
+      setAnalyzing(true);
+      setAnalysisStatus("Starting analysis...");
+
+      // Get video path from URL
+      const videoPath = videoUrl.split("/videos/")[1];
+
+      // Generate signed URL
+      const { data: signedData } = await supabase.storage
+        .from("videos")
+        .createSignedUrl(videoPath, 3600);
+
+      const signedUrl = signedData?.signedUrl;
+
+      // Send to backend for analysis
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const res = await fetch(`${apiUrl}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          video_url: signedUrl,
+          user_id: user.id,
+          video_id: videoId,
+          analysis_prompt: analysisPrompt,
+        }),
+      });
+
+      const result = await res.json();
+
+      // Save insights to Supabase
+      for (const insight of result.insights) {
+        await supabase.from("video_analysis").insert({
+          user_id: user.id,
+          video_id: videoId,
+          timestamp: insight.timestamp,
+          tip: insight.tip,
+        });
+      }
+
+      // Update UI with feedback
+      const feedback = result.insights
+        .map((i: any) => `${i.timestamp}: ${i.tip}`)
+        .join("\n\n");
+
+      if (onAnalysisComplete) {
+        onAnalysisComplete(feedback);
+      }
+
+      setAnalysisStatus("Analysis complete!");
+    } catch (error: any) {
+      console.error("Error analyzing video:", error);
+      setAnalysisStatus(
+        "Analysis failed: " + (error.message || "Unknown error")
+      );
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -30,6 +127,7 @@ export default function VideoUpload({ user }: VideoUploadProps) {
       setUploading(true);
       setUploadError("");
       setProgress(0);
+      setAnalysisStatus("");
 
       // Create a unique file path
       const fileExt = file.name.split(".").pop();
@@ -60,22 +158,32 @@ export default function VideoUpload({ user }: VideoUploadProps) {
       } = supabase.storage.from("videos").getPublicUrl(filePath);
 
       // Save the video record to the database
-      const { error: dbError } = await supabase.from("training_videos").insert([
-        {
-          user_id: user.id,
-          title,
-          description,
-          analysis_prompt: analysisPrompt,
-          video_url: publicUrl,
-          created_at: new Date(),
-        },
-      ]);
+      const { data: videoData, error: dbError } = await supabase
+        .from("training_videos")
+        .insert([
+          {
+            user_id: user.id,
+            title,
+            description,
+            analysis_prompt: analysisPrompt,
+            video_url: publicUrl,
+            created_at: new Date(),
+          },
+        ])
+        .select()
+        .single();
 
       if (dbError) throw dbError;
 
       // Success!
       setProgress(100);
       setUploadSuccess(true);
+
+      // Start analysis
+      if (videoData) {
+        await analyzeVideo(videoData.id, publicUrl);
+      }
+
       setFile(null);
       setTitle("");
       setDescription("");
@@ -150,7 +258,17 @@ export default function VideoUpload({ user }: VideoUploadProps) {
           />
         </div>
 
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+        <div
+          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+            isDragging
+              ? "border-blue-500 bg-blue-50"
+              : "border-gray-300 hover:border-gray-400"
+          }`}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
           <input
             type="file"
             accept="video/*"
@@ -193,20 +311,40 @@ export default function VideoUpload({ user }: VideoUploadProps) {
           )}
         </div>
 
-        {uploading && (
-          <div className="mt-2">
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <p className="text-center text-sm mt-1">{progress}% complete</p>
+        {(uploading || analyzing) && (
+          <div className="mt-2 space-y-2">
+            {uploading && (
+              <div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+                <p className="text-center text-sm mt-1">{progress}% uploaded</p>
+              </div>
+            )}
+            {analyzing && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <p className="text-sm text-blue-700">{analysisStatus}</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        <Button type="submit" disabled={!file || uploading} className="w-full">
-          {uploading ? "Uploading..." : "Upload Video"}
+        <Button
+          type="submit"
+          disabled={!file || uploading || analyzing}
+          className="w-full"
+        >
+          {uploading
+            ? "Uploading..."
+            : analyzing
+            ? "Analyzing..."
+            : "Upload & Analyze"}
         </Button>
       </form>
     </div>
