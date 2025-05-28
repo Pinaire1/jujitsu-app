@@ -1,13 +1,13 @@
-# Jujitsu Training Tracker (Frontend)
+# Jujitsu Training Tracker
 
 A web application for tracking jujitsu training progress, managing belt levels, and generating curriculum based on student attendance.
 
 ## Project Structure
 
-This repository contains the frontend of the Jujitsu Training Tracker application. The backend is maintained in a separate repository.
+This repository contains both the frontend and backend of the Jujitsu Training Tracker application:
 
-- Frontend (this repo): React + TypeScript application
-- Backend: FastAPI application (separate repo)
+- Frontend: React + TypeScript application
+- Backend: FastAPI application
 
 ## Features
 
@@ -17,106 +17,123 @@ This repository contains the frontend of the Jujitsu Training Tracker applicatio
 - Curriculum organized by belt level
 - Intelligent class planner that generates curriculum based on active students
 - Belt distribution analytics
+- Video analysis for technique recognition
 
 ## Tech Stack
 
-- React with TypeScript
-- Vite for building
-- Tailwind CSS for styling
-- Supabase for authentication and database
-- FastAPI backend for video analysis (separate repo)
+- Frontend:
+  - React with TypeScript
+  - Vite for building
+  - Tailwind CSS for styling
+  - Supabase for authentication and database
+- Backend:
+  - FastAPI
+  - Python
+  - OpenCV for video analysis
 
-## Deployment Instructions for Vercel
+## Local Development Setup
 
 ### Prerequisites
 
-1. A [Vercel](https://vercel.com) account
-2. A [Supabase](https://supabase.com) project
+1. Node.js (v16 or higher)
+2. Python 3.8 or higher
+3. A [Supabase](https://supabase.com) project
 
-### Setup Environment Variables
+### Setup Steps
 
-Create a `.env` file from the example:
-
-```
-# Supabase Configuration
-VITE_SUPABASE_URL=your_supabase_url_here
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
-
-# Application Settings
-VITE_APP_URL=https://your-app-domain.vercel.app
-```
-
-### Supabase Configuration for Email Verification
-
-1. In your Supabase project, go to Authentication → Email Templates
-2. Customize the "Confirm signup" template
-3. Make sure the "Site URL" in Authentication settings is set to your Vercel deployment URL
-4. Enable "Confirm email" in the Email Auth Provider settings
-
-### Deploy to Vercel
-
-1. Connect your GitHub repository to Vercel
-2. Set environment variables in Vercel project settings:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_APP_URL`
-3. Deploy your project
-
-### Database Setup
-
-Run the SQL script from `supabase_setup.sql` in your Supabase SQL Editor to create the necessary tables and sample data.
-
-## Development
-
-1. Clone both repositories:
+1. Clone the repository:
 
    ```bash
-   # Frontend (this repo)
-   git clone <frontend-repo-url>
-
-   # Backend
-   git clone <backend-repo-url>
+   git clone https://github.com/Pinaire1/jujitsu-app.git
+   cd jujitsu-app
    ```
 
-2. Install dependencies:
+2. Set up the frontend:
 
    ```bash
-   # Frontend
+   # Install dependencies
    npm install
 
-   # Backend
-   cd ../fastapi-backend
+   # Create .env file
+   cp .env.example .env
+   ```
+
+3. Set up the backend:
+
+   ```bash
+   cd fastapi-backend
+
+   # Create and activate virtual environment
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+   # Install dependencies
    pip install -r requirements.txt
    ```
 
-3. Create a `.env` file with your Supabase credentials
-4. Run both servers:
+4. Configure environment variables:
+
+   - Frontend (.env):
+     ```
+     VITE_SUPABASE_URL=your_supabase_url_here
+     VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+     VITE_APP_URL=http://localhost:5173
+     ```
+   - Backend (fastapi-backend/.env):
+     ```
+     SUPABASE_URL=your_supabase_url_here
+     SUPABASE_KEY=your_supabase_service_role_key_here
+     ```
+
+5. Run the application:
 
    ```bash
-   # Frontend
+   # Terminal 1 - Frontend
    npm run dev
 
-   # Backend (in a separate terminal)
-   cd ../fastapi-backend
-   uvicorn api:app --reload
+   # Terminal 2 - Backend
+   cd fastapi-backend
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   uvicorn main:app --reload
    ```
 
-## Testing Email Verification
+The application will be available at:
 
-To test email verification:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
 
-1. Register with a valid email
-2. Check your inbox for the verification email
-3. Click the verification link
-4. You should be redirected to the app and be able to log in
+### Database Setup
 
-For local development, you can use Supabase's email testing features in the dashboard.
+1. Create a new project in Supabase
+2. Run the SQL script from `supabase_setup.sql` in your Supabase SQL Editor to create the necessary tables and sample data
+
+## Deployment
+
+### Frontend (Vercel)
+
+1. Connect your GitHub repository to Vercel
+2. Set environment variables in Vercel project settings
+3. Deploy your project
+
+### Backend (Render)
+
+The backend is configured for deployment on Render. The `render.yaml` file contains the necessary configuration.
 
 ## Project Structure
 
-- `src/components/` - Reusable UI components
-- `src/pages/` - Page components
-- `src/lib/` - Utilities and shared code
-- `src/components/ui/` - Base UI components
+- `src/` - Frontend React application
+  - `components/` - Reusable UI components
+  - `pages/` - Page components
+  - `lib/` - Utilities and shared code
+- `fastapi-backend/` - Backend FastAPI application
+  - `main.py` - Main application file
+  - `analyze_video.py` - Video analysis functionality
+  - `requirements.txt` - Python dependencies
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
