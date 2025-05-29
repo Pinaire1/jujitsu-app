@@ -1,144 +1,138 @@
-# Jujitsu Video Analysis Backend
+# Jujitsu Video Analysis Frontend
 
-This is the FastAPI backend for the Jujitsu Video Analysis application. It provides endpoints for video analysis and processing.
+This is the frontend application for the Jujitsu Video Analysis project. Built with React, TypeScript, and Vite, it provides a modern and responsive user interface for analyzing jujitsu videos.
 
 ## Prerequisites
 
 Before you begin, ensure you have:
 
-1. Python 3.8 or higher installed
-2. A Supabase account (free tier is fine)
-3. An OpenAI API key
-4. Basic knowledge of Python and API development
+1. Node.js 18.0 or higher installed
+2. npm or yarn package manager
+3. Basic knowledge of React and TypeScript
+4. Access to the backend API (see backend README for setup)
 
 ## Setup Instructions
 
-### 1. Clone the Repository
+### 1. Install Dependencies
 
 ```bash
-git clone https://github.com/Pinaire1/FastAPI-backend.git
-cd FastAPI-backend
+npm install
+# or
+yarn install
 ```
 
-### 2. Set Up Python Environment
+### 2. Environment Configuration
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+VITE_API_URL=http://localhost:8000
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 3. Development
+
+To start the development server:
 
 ```bash
-# Create virtual environment
-python3 -m venv venv
+npm run dev
+# or
+yarn dev
+```
 
-# Activate virtual environment
-# On macOS/Linux:
-source venv/bin/activate
-# On Windows:
-venv\Scripts\activate
+The application will be available at `http://localhost:5173`
 
-# Install dependencies
-pip install -r requirements.txt
+### 4. Building for Production
 
-
-### 3. Supabase Setup
-
-You can use our setup script to help you configure Supabase:
+To create a production build:
 
 ```bash
-python scripts/setup_supabase.py
+npm run build
+# or
+yarn build
 ```
 
-This script will:
-
-1. Guide you through creating a Supabase project
-2. Help you create the required storage bucket
-3. Get your API credentials
-4. Set up your `.env` file
-
-Alternatively, you can set up Supabase manually:
-
-1. Create a new project at [Supabase](https://supabase.com)
-2. Create a new bucket named "videos" in Storage
-3. Get your project URL and service role key from Project Settings > API
-
-### 4. OpenAI Setup
-
-1. Create an account at [OpenAI](https://openai.com)
-2. Generate an API key from your account settings
-3. Add funds to your account (API calls are not free)
-
-### 5. Environment Configuration
-
-1. Copy `.env.example` to `.env`:
+To preview the production build:
 
 ```bash
-cp .env.example .env
+npm run preview
+# or
+yarn preview
 ```
 
-2. Edit `.env` and add your credentials:
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Create production build
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint for code linting
+
+## Tech Stack
+
+- **Framework**: React 19
+- **Language**: TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **UI Components**: Radix UI
+- **State Management**: React Hooks
+- **Routing**: React Router
+- **HTTP Client**: Axios
+- **Authentication**: Supabase
+
+## Project Structure
 
 ```
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE=your_supabase_service_role
-OPENAI_API_KEY=your_openai_api_key
-FRONTEND_URL=http://localhost:5173
-PORT=8000
+src/
+├── components/     # Reusable UI components
+├── pages/         # Page components
+├── hooks/         # Custom React hooks
+├── services/      # API and external service integrations
+├── types/         # TypeScript type definitions
+├── utils/         # Utility functions
+└── App.tsx        # Root component
 ```
 
-### 6. Check Prerequisites
+## Development Guidelines
 
-Run the prerequisites check script to ensure everything is set up correctly:
-
-```bash
-python scripts/check_prerequisites.py
-```
-
-This script will verify:
-
-- Python version
-- Required packages
-- Environment variables
-- Virtual environment setup
-
-### 7. Run the Server
-
-```bash
-python main.py
-```
-
-The server will start at `http://localhost:8000`
-
-## API Documentation
-
-Once the server is running, you can access:
-
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+1. **TypeScript**: Always use proper typing for props, state, and functions
+2. **Components**: Follow atomic design principles
+3. **Styling**: Use Tailwind CSS for styling
+4. **State Management**: Use React hooks for local state
+5. **Code Style**: Follow ESLint configuration
 
 ## Troubleshooting
 
 ### Common Issues:
 
-1. **ModuleNotFoundError**: Make sure you've activated the virtual environment and installed all dependencies
-2. **Supabase Connection Error**: Verify your Supabase URL and service role key
-3. **OpenAI API Error**: Check your API key and account balance
-4. **CORS Error**: Ensure FRONTEND_URL in .env matches your frontend's URL
+1. **Module not found**: Ensure all dependencies are installed
+2. **Type errors**: Check TypeScript configurations
+3. **API connection**: Verify backend is running and environment variables are set
+4. **Build errors**: Check for TypeScript compilation errors
 
 ### Getting Help
 
 If you encounter any issues:
 
-1. Run the prerequisites check script:
-   ```bash
-   python scripts/check_prerequisites.py
-   ```
-2. Check the error message in the terminal
-3. Verify all environment variables are set correctly
-4. Check the API documentation at `/docs` endpoint
-
-## Security Notes
-
-- Never commit your `.env` file
-- Keep your API keys secure
-- Don't share your Supabase service role key
-- Monitor your OpenAI API usage
+1. Check the console for error messages
+2. Verify all environment variables are set correctly
+3. Ensure the backend server is running
+4. Check the browser's developer tools for network errors
 
 ## Deployment
 
-The application is configured for deployment on Render.com using the `render.yaml` configuration file.
+The application is configured for deployment on Vercel using the `vercel.json` configuration file.
+
+## Contributing
+
+1. Create a new branch for your feature
+2. Follow the existing code style
+3. Write meaningful commit messages
+4. Submit a pull request
+
+## Security Notes
+
+- Never commit `.env` files
+- Keep API keys and sensitive information secure
+- Use environment variables for configuration
+- Follow security best practices for authentication
