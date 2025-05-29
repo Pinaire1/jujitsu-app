@@ -6,7 +6,7 @@ import requests, os, tempfile, cv2
 import openai
 import mediapipe as mp
 from dotenv import load_dotenv
-from analyze_video import run as async_analysis
+from .analyze_video import run as async_analysis
 import shutil
 from typing import Optional, List, Dict
 
