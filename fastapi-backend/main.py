@@ -6,7 +6,7 @@ import requests, os, tempfile, cv2
 import openai
 import mediapipe as mp
 from dotenv import load_dotenv
-from .analyze_video import run as async_analysis
+from analyze_video import run as async_analysis
 import shutil
 from typing import Optional, List, Dict
 
@@ -36,6 +36,7 @@ class VideoAnalysisRequest(BaseModel):
     video_url: str
     user_id: str
     video_id: str
+    analysis_prompt: Optional[str] = None
 
 @app.post("/upload-video/")
 async def upload_video(
@@ -102,24 +103,34 @@ async def upload_video(
         )
 
 @app.post("/analyze")
-async def analyze_video_endpoint(video: UploadFile = File(...)):
+async def analyze_video_endpoint(request: VideoAnalysisRequest):
     try:
-        # Validate file type
-        if not video.content_type.startswith('video/'):
+        # Download video from URL
+        response = requests.get(request.video_url)
+        if response.status_code != 200:
             raise HTTPException(
                 status_code=400,
-                detail="File must be a video"
+                detail="Failed to download video from URL"
             )
 
         # Create a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
-            shutil.copyfileobj(video.file, tmp)
+            tmp.write(response.content)
             tmp_path = tmp.name
 
         try:
             # Run the analysis
-            feedback = async_analysis(tmp_path, "anonymous")
-            return JSONResponse(content={"feedback": feedback})
+            feedback = async_analysis(tmp_path, request.user_id)
+            
+            # If we have a specific analysis prompt, get GPT feedback
+            if request.analysis_prompt:
+                gpt_feedback = get_gpt_feedback(request.video_url, request.analysis_prompt)
+                feedback.append({
+                    "timestamp": "N/A",
+                    "tip": gpt_feedback
+                })
+
+            return JSONResponse(content={"insights": feedback})
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -137,12 +148,17 @@ async def analyze_video_endpoint(video: UploadFile = File(...)):
             detail=f"Unexpected error: {str(e)}"
         )
 
-def get_gpt_feedback(video_url: str) -> str:
+def get_gpt_feedback(video_url: str, analysis_prompt: str) -> str:
     prompt = f"""
-You are a Brazilian Jiu-Jitsu coach. Provide general feedback on the video below:
-- Highlight mistakes or improvements in timing, control, positioning, transitions
-- Give positive encouragement and coaching points
+You are a Brazilian Jiu-Jitsu coach analyzing a student's technique. The student has requested specific feedback on:
+
+{analysis_prompt}
+
+Please provide detailed feedback on the video below, focusing on the requested aspects:
+- Be specific about timing, control, positioning, and transitions
+- Give positive encouragement and actionable coaching points
 - Speak clearly and helpfully
+- If you notice any safety concerns, highlight them
 
 Video URL: {video_url}
 """

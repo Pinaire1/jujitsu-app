@@ -64,10 +64,10 @@ export default function VideoAnalysis({
       setAnalyzing(true);
       setError("");
 
-      // 1. Get video path from DB
+      // 1. Get video path and analysis prompt from DB
       const { data: videoData } = await supabase
         .from("training_videos")
-        .select("video_url")
+        .select("video_url, analysis_prompt")
         .eq("id", videoId)
         .single();
 
@@ -89,6 +89,7 @@ export default function VideoAnalysis({
           video_url: signedUrl,
           user_id: user.id,
           video_id: videoId,
+          analysis_prompt: videoData?.analysis_prompt,
         }),
       });
 
